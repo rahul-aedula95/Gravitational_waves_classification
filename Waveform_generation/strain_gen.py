@@ -15,7 +15,7 @@ count=1     # file name count for creation
 for apx in ['SEOBNRv2']:
     for i in xrange(0,2):
         for j in xrange(0,2):
-           hp, hc = get_td_waveform(approximant=apx,
+            hp, hc = get_td_waveform(approximant=apx,
                                  mass1=m1,
                                  mass2=m2,
                                  spin1z=0.6,
@@ -23,7 +23,7 @@ for apx in ['SEOBNRv2']:
                                  f_lower=45,f_ref=200)
 
            
-           with open(filename+str(count),'w') as f:
+            with open(filename+str(count),'w') as f:
                  np.savetxt(f, hp)
             m1=m1+m1_step
             count=count+1
@@ -32,7 +32,7 @@ for apx in ['SEOBNRv2']:
 
 
 
-print done
+print "done"
 
 
 
