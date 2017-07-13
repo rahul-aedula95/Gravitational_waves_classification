@@ -8,12 +8,6 @@ import myconstants
 import sys
 import os
 import time
-import multiprocessing
-from multiprocessing import Pool
-from multiprocessing import Semaphore
-import copy
-import random
-from math import sqrt
 
 """ 
 	mass of first body = m1
@@ -37,20 +31,6 @@ def frange(start, stop, step):
 		temp.append(x)
 		x += step
 	return temp
-
-def computeHPHC(argList):
-	for apx in ['SEOBNRv2']:
-		hp, hc = get_td_waveform(approximant=apx, \
-			mass1 = argList[0], \
-			mass2 = argList[1], \
-			spin1z = argList[2], \
-			delta_t = argList[3],\
-			f_lower = argList[4])
-	return hp, hc
-
-def computeMaxHPHC(argList):
-	hp, hc = computeHPHC(argList)
-	return sqrt((max(hp)**2) + (max(hc)**2))
 
 def genDesignMatrix(m1Range, m2Range, spzRange, del_tRange, f_lowRange, strict = False):
 	try:
@@ -79,68 +59,44 @@ def genDesignMatrix(m1Range, m2Range, spzRange, del_tRange, f_lowRange, strict =
 	del_tRange = frange(del_tRange[0], del_tRange[1], del_tRange[2])
 	f_lowRange = frange(f_lowRange[0], f_lowRange[1], f_lowRange[2])
 
-	print '\nComputation START (Generation Stage)'
-	argListParallel = list()
+	print '\nComputation START'
 	loop = 1
-	for m1 in frange(m1Range[0], m1Range[1], m1Range[2]):
-		for m2 in frange(m2Range[0], m2Range[1], m2Range[2]):
+	for m1 in xrange(m1Range[0], m1Range[1], m1Range[2]):
+		for m2 in xrange(m2Range[0], m2Range[1], m2Range[2]):
 			if strict == True:
 				if m1 < m2:
 					continue
-				if float(m1)/m2 > 100.0:
-					continue
 			for spz in frange(spzRange[0], spzRange[1], spzRange[2]):
 				for del_t in del_tRange:
-					for f_low in f_lowRange:		
-						print 'Entered loop: '+str(loop)
-						loop += 1
-						temp = list()
-						designMatrix['m1'].append(m1)
-						designMatrix['m2'].append(m2)
-						designMatrix['spz'].append(spz)
-						designMatrix['del_t']. append(del_t)
-						designMatrix['f_low'].append(f_low)
-						temp.append(m1)
-						temp.append(m2)
-						temp.append(spz)
-						temp.append(del_t)
-						temp.append(f_low)
-						argListParallel.append(temp)
-	pool = Pool(multiprocessing.cpu_count())
-	# pool = Semaphore(multiprocessing.cpu_count()) # use if above doesn't work
-	print '\nComputation START (Evaluation Stage)'
-	print 'Number of cores (usage): '+str(multiprocessing.cpu_count())
-	response = pool.map(computeMaxHPHC, argListParallel)
-	designMatrix['amplitude'] = copy.deepcopy(response)
+					for f_low in f_lowRange:
+						for apx in ['SEOBNRv2']:
+							print 'Entered loop: '+str(loop)
+							loop += 1
+							hp, hc = get_td_waveform(approximant=apx, \
+								mass1 = m1, \
+								mass2 = m2, \
+								spin1z = spz, \
+								delta_t = del_t,\
+								f_lower = f_low)
+							designMatrix['amplitude'].append(max(hp))
+							designMatrix['m1'].append(m1)
+							designMatrix['m2'].append(m2)
+							designMatrix['spz'].append(spz)
+							designMatrix['del_t']. append(del_t)
+							designMatrix['f_low'].append(f_low)
 	return designMatrix
-
-def randGenDesignMatrix(size):
-	m1 = list()
-	for i in xrange(size):
-		m2 = random.sample(range(10,110), 100)
-		for val in m2:
-			while True:
-				m = random.randint(m2, m2+99) 
-				if m in m1:
-					continue
-				m1.append(m)
-				break
-	print 'm1:', m1
-	print 'm2:', m2
-
 
 if __name__ == "__main__":
 	# Create and assign default range
 	# NOTE: del_t and f_low could be provided the range values.
-	m1Range = [10, 50, 1]
-	m2Range = [10, 11, 1]
+	m1Range = [10, 20, 1]
+	m2Range = [10, 20, 1]
 	spzRange = [0.1, 0.2, 0.1]
 	del_tRange = [1.0/4096]
 	f_lowRange = [60]
 
 	# Execute the function and evaluate the time
-	# NOTE: If strict == True, then always m1 >= m2
-	# NOTE: IF random == True, then random values are generated in the range
+	# NOTE: If strict == True, then always m2 >= m1
 	strictToggle = True
 	start = time.time()
 	matrix = genDesignMatrix(m1Range, m2Range, spzRange, del_tRange, f_lowRange, strict=strictToggle)
@@ -185,7 +141,7 @@ if __name__ == "__main__":
 	output.write("amplitude, "+"m1, "+"m2, "+"spz, "+"del_t, "+"f_low,\n")
 	for i in xrange(len(matrix['amplitude'])):
 		output.write(str(matrix['amplitude'][i])+", "+str(matrix['m1'][i])+", "+str(matrix['m2'][i])+\
-			", "+str(matrix['spz'][i])+", "+str(matrix['del_t'][i])+", "+str(matrix['f_low'][i])+"\n")
+			", "+str(matrix['spz'][i])+", "+str(matrix['del_t'][i])+", "+str(matrix['f_low'][i])+",\n")
 
 	output.close()
 

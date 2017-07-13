@@ -13,7 +13,6 @@ from multiprocessing import Pool
 from multiprocessing import Semaphore
 import copy
 import random
-from math import sqrt
 
 """ 
 	mass of first body = m1
@@ -40,6 +39,7 @@ def frange(start, stop, step):
 
 def computeHPHC(argList):
 	for apx in ['SEOBNRv2']:
+		print 'm1, m2:', argList[0], argList[1]
 		hp, hc = get_td_waveform(approximant=apx, \
 			mass1 = argList[0], \
 			mass2 = argList[1], \
@@ -50,7 +50,7 @@ def computeHPHC(argList):
 
 def computeMaxHPHC(argList):
 	hp, hc = computeHPHC(argList)
-	return sqrt((max(hp)**2) + (max(hc)**2))
+	return max(hp)
 
 def genDesignMatrix(m1Range, m2Range, spzRange, del_tRange, f_lowRange, strict = False):
 	try:
@@ -83,29 +83,23 @@ def genDesignMatrix(m1Range, m2Range, spzRange, del_tRange, f_lowRange, strict =
 	argListParallel = list()
 	loop = 1
 	for m1 in frange(m1Range[0], m1Range[1], m1Range[2]):
-		for m2 in frange(m2Range[0], m2Range[1], m2Range[2]):
-			if strict == True:
-				if m1 < m2:
-					continue
-				if float(m1)/m2 > 100.0:
-					continue
-			for spz in frange(spzRange[0], spzRange[1], spzRange[2]):
-				for del_t in del_tRange:
-					for f_low in f_lowRange:		
-						print 'Entered loop: '+str(loop)
-						loop += 1
-						temp = list()
-						designMatrix['m1'].append(m1)
-						designMatrix['m2'].append(m2)
-						designMatrix['spz'].append(spz)
-						designMatrix['del_t']. append(del_t)
-						designMatrix['f_low'].append(f_low)
-						temp.append(m1)
-						temp.append(m2)
-						temp.append(spz)
-						temp.append(del_t)
-						temp.append(f_low)
-						argListParallel.append(temp)
+		for spz in frange(spzRange[0], spzRange[1], spzRange[2]):
+			for del_t in del_tRange:
+				for f_low in f_lowRange:		
+					print 'Entered loop: '+str(loop)
+					loop += 1
+					temp = list()
+					designMatrix['m1'].append(m1)
+					designMatrix['spz'].append(spz)
+					designMatrix['del_t']. append(del_t)
+					designMatrix['f_low'].append(f_low)
+					designMatrix['m2'].append(m1/100.0+EPSILON)
+					temp.append(m1)
+					temp.append(m1/100.0+EPSILON)
+					temp.append(spz)
+					temp.append(del_t)
+					temp.append(f_low)
+					argListParallel.append(temp)
 	pool = Pool(multiprocessing.cpu_count())
 	# pool = Semaphore(multiprocessing.cpu_count()) # use if above doesn't work
 	print '\nComputation START (Evaluation Stage)'
@@ -132,8 +126,8 @@ def randGenDesignMatrix(size):
 if __name__ == "__main__":
 	# Create and assign default range
 	# NOTE: del_t and f_low could be provided the range values.
-	m1Range = [10, 50, 1]
-	m2Range = [10, 11, 1]
+	m1Range = [10, 20, 1]
+	m2Range = [10, 20, 1]
 	spzRange = [0.1, 0.2, 0.1]
 	del_tRange = [1.0/4096]
 	f_lowRange = [60]
@@ -185,7 +179,7 @@ if __name__ == "__main__":
 	output.write("amplitude, "+"m1, "+"m2, "+"spz, "+"del_t, "+"f_low,\n")
 	for i in xrange(len(matrix['amplitude'])):
 		output.write(str(matrix['amplitude'][i])+", "+str(matrix['m1'][i])+", "+str(matrix['m2'][i])+\
-			", "+str(matrix['spz'][i])+", "+str(matrix['del_t'][i])+", "+str(matrix['f_low'][i])+"\n")
+			", "+str(matrix['spz'][i])+", "+str(matrix['del_t'][i])+", "+str(matrix['f_low'][i])+",\n")
 
 	output.close()
 
