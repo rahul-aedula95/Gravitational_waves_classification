@@ -1,2 +1,2 @@
 # Gravitational_waves_classification
-This repository contains Gravitational Wave numerical relativity based classification for Planets. It uses a few basic Machine Learning Algorithms in Python to get the Job done 
+This project deals with the application of ML in Gravitational wave astronomy. Using a mixture of Exopnential Regression and Random Forests we work on Gravitational wave strain data to be able to extrapolate scenarios of black holes to other celestial bodies such as Exoplanets. We recreate strain data for Exoplanets and classify them according to their designated Mass Class. 
